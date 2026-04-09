@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>運動紀錄系統 v2</title>
+  <title>運動紀錄系統 v3</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -11,27 +12,29 @@
       --text: #1f2937;
       --muted: #6b7280;
       --primary: #2563eb;
+      --primary-soft: #e8f0ff;
       --border: #dbe3ef;
-      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
       --radius: 18px;
+      --nav-h: 76px;
     }
     * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
     body {
-      margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--text);
     }
     .app {
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto;
-      padding: 16px 16px 104px;
+      padding: 14px 14px calc(var(--nav-h) + 24px);
     }
     .header {
       position: sticky;
       top: 0;
       z-index: 20;
-      background: rgba(245,247,251,0.96);
+      background: rgba(245, 247, 251, 0.96);
       backdrop-filter: blur(10px);
       padding: 10px 0 12px;
     }
@@ -40,100 +43,151 @@
       font-size: 22px;
       font-weight: 800;
     }
-    .subtitle {
+    .version {
       margin-top: 4px;
+      font-size: 12px;
       color: var(--muted);
-      font-size: 13px;
+      font-weight: 700;
     }
     .panel { display: none; }
     .panel.active { display: block; }
     .card {
       background: var(--card);
       border-radius: var(--radius);
-      padding: 16px;
-      margin-top: 14px;
+      padding: 14px;
+      margin-top: 12px;
       box-shadow: var(--shadow);
     }
     .card h2 {
-      margin: 0 0 12px;
+      margin: 0 0 10px;
       font-size: 18px;
     }
     .grid-2 {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+      align-items: end;
     }
-    .field { margin-bottom: 12px; }
+    .field { margin-bottom: 10px; min-width: 0; }
     .field label {
       display: block;
+      margin-bottom: 6px;
       font-size: 13px;
       color: var(--muted);
-      margin-bottom: 6px;
-      font-weight: 600;
+      font-weight: 700;
     }
     input, select, textarea {
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px;
-      font-size: 16px;
       background: #fff;
+      color: var(--text);
+      padding: 11px 12px;
+      font-size: 16px;
+      line-height: 1.25;
+      min-height: 46px;
     }
-    input[type="date"] {
-      min-width: 0;
-      width: 100%;
+    .compact-input {
+      min-height: 46px;
+      height: 46px;
+      padding: 10px 12px;
     }
     textarea {
-      min-height: 78px;
+      min-height: 84px;
       resize: vertical;
     }
     .num-wrap {
       display: grid;
-      grid-template-columns: 56px 1fr 56px;
+      grid-template-columns: 50px 1fr 50px;
       gap: 8px;
       align-items: center;
     }
     .num-btn {
-      height: 48px;
+      min-height: 46px;
+      height: 46px;
       border: 0;
       border-radius: 12px;
-      background: #edf2ff;
-      color: #23408e;
+      background: var(--primary-soft);
+      color: #20428f;
       font-size: 24px;
-      font-weight: 700;
-    }
-    .primary-btn, .secondary-btn, .tiny-btn, .range-btn {
-      border: 0;
-      border-radius: 14px;
-      padding: 13px 14px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .primary-btn { background: var(--primary); color: #fff; }
-    .secondary-btn { background: #e8eef9; color: #24468f; }
-    .tiny-btn {
-      padding: 8px 10px;
-      font-size: 13px;
-      background: #eff4ff;
-      color: #23408e;
-      border-radius: 10px;
+      font-weight: 800;
     }
     .actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
     }
+    .primary-btn, .secondary-btn, .tiny-btn, .range-btn {
+      border: 0;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .primary-btn, .secondary-btn {
+      padding: 12px 14px;
+      font-size: 15px;
+    }
+    .primary-btn { background: var(--primary); color: #fff; }
+    .secondary-btn { background: #e7eefc; color: #24468f; }
+    .tiny-btn {
+      padding: 8px 10px;
+      font-size: 13px;
+      background: #eef4ff;
+      color: #24468f;
+    }
+    .hidden { display: none !important; }
     .hint {
       font-size: 12px;
       color: var(--muted);
       line-height: 1.5;
-      margin-top: 4px;
+      margin-top: 8px;
+    }
+    .record-list {
+      display: grid;
+      gap: 10px;
+    }
+    .record-item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px;
+    }
+    .record-item-title {
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .record-item-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .record-item-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .range-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .range-btn {
+      padding: 9px 12px;
+      background: #e7eefc;
+      color: #24468f;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+    .range-btn.active {
+      background: var(--primary);
+      color: #fff;
     }
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
     }
     .summary-card {
       background: #f8fbff;
@@ -145,51 +199,49 @@
       font-size: 12px;
       color: var(--muted);
       margin-bottom: 6px;
+      font-weight: 700;
     }
     .summary-card .value {
-      font-size: 24px;
+      font-size: 23px;
       font-weight: 800;
     }
-    .range-btns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 260px;
     }
-    .range-btn {
-      background: #e7eefc;
-      color: #24468f;
-      padding: 10px 12px;
-      border-radius: 999px;
-    }
-    .range-btn.active {
-      background: var(--primary);
-      color: #fff;
-    }
-    .record-list {
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid #dfe7f5;
       display: grid;
-      gap: 10px;
-      margin-top: 12px;
+      grid-template-columns: repeat(4, 1fr);
+      height: var(--nav-h);
+      padding-bottom: env(safe-area-inset-bottom);
     }
-    .record-item {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px;
-      background: #fff;
-    }
-    .record-item-title {
+    .nav-btn {
+      border: 0;
+      background: transparent;
+      color: #667085;
+      font-size: 12px;
       font-weight: 800;
-      margin-bottom: 6px;
-    }
-    .record-item-meta {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    .record-item-actions {
       display: flex;
-      gap: 8px;
-      margin-top: 10px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .nav-btn .icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+    .nav-btn.active {
+      color: var(--primary);
     }
     .footer-link {
       text-align: right;
@@ -203,9 +255,9 @@
     .msg {
       position: fixed;
       left: 50%;
-      bottom: 94px;
+      bottom: calc(var(--nav-h) + 14px);
       transform: translateX(-50%);
-      background: rgba(17,24,39,0.92);
+      background: rgba(17, 24, 39, 0.92);
       color: #fff;
       padding: 12px 16px;
       border-radius: 999px;
@@ -213,78 +265,48 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity .2s ease;
-      z-index: 80;
+      z-index: 60;
       max-width: calc(100% - 24px);
-      white-space: nowrap;
+      text-align: center;
     }
     .msg.show { opacity: 1; }
-    .hidden { display:none !important; }
-    .bottom-nav {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(255,255,255,0.98);
-      border-top: 1px solid var(--border);
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      z-index: 30;
-      backdrop-filter: blur(12px);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    .nav-btn {
-      border: 0;
-      background: transparent;
-      padding: 10px 4px 12px;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 700;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-    .nav-btn .icon { font-size: 19px; }
-    .nav-btn.active { color: var(--primary); }
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(15,23,42,0.35);
+      background: rgba(15, 23, 42, 0.34);
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 100;
+      z-index: 80;
       padding: 24px;
     }
     .overlay.show { display: flex; }
     .overlay-card {
-      background: white;
+      background: #fff;
       border-radius: 18px;
-      padding: 22px 18px;
-      min-width: 220px;
-      text-align: center;
+      padding: 18px 20px;
+      font-size: 16px;
+      font-weight: 800;
       box-shadow: var(--shadow);
+      text-align: center;
     }
-    .spinner {
-      width: 34px;
-      height: 34px;
-      border: 4px solid #dbeafe;
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      margin: 0 auto 12px;
-      animation: spin .9s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @media (max-width: 520px) {
-      .grid-2, .summary-grid { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 560px) {
+      .app { padding-left: 12px; padding-right: 12px; }
+      .title { font-size: 20px; }
+      .grid-2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+      input, select, textarea { font-size: 15px; }
+      .compact-input { font-size: 15px; }
+      .summary-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .summary-card .value { font-size: 19px; }
+      .chart-wrap { height: 220px; }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <div class="header">
-      <h1 class="title">運動紀錄系統 v2</h1>
-      <div class="subtitle">手機版運動紀錄</div>
+      <h1 class="title">運動紀錄系統</h1>
+      <div class="version">v3</div>
     </div>
 
     <section id="panel-body" class="panel active">
@@ -293,11 +315,11 @@
         <div class="grid-2">
           <div class="field">
             <label>日期</label>
-            <input type="date" id="bodyDate">
+            <input class="compact-input" type="text" id="bodyDate" placeholder="2026/04/09">
           </div>
           <div class="field">
             <label>時段</label>
-            <select id="bodyTimeSlot">
+            <select class="compact-input" id="bodyTimeSlot">
               <option value="上午">上午</option>
               <option value="下午">下午</option>
               <option value="晚上">晚上</option>
@@ -306,15 +328,15 @@
         </div>
         <div class="field">
           <label>體重（912→91.2、104→104）</label>
-          <input inputmode="decimal" id="bodyWeight" placeholder="例如 70.4 或 912">
+          <input id="bodyWeight" inputmode="decimal" placeholder="例如 70.4 或 912">
         </div>
         <div class="field">
           <label>體脂肪（283→28.3）</label>
-          <input inputmode="decimal" id="bodyFat" placeholder="例如 28.3 或 283">
+          <input id="bodyFat" inputmode="decimal" placeholder="例如 28.3 或 283">
         </div>
         <div class="field">
           <label>腰圍（825→82.5）</label>
-          <input inputmode="decimal" id="bodyWaist" placeholder="例如 82.5 或 825">
+          <input id="bodyWaist" inputmode="decimal" placeholder="例如 82.5 或 825">
         </div>
         <div class="field">
           <label>備註</label>
@@ -337,11 +359,11 @@
         <div class="grid-2">
           <div class="field">
             <label>日期</label>
-            <input type="date" id="runDate">
+            <input class="compact-input" type="text" id="runDate" placeholder="2026/04/09">
           </div>
           <div class="field">
             <label>時段</label>
-            <select id="runTimeSlot">
+            <select class="compact-input" id="runTimeSlot">
               <option value="上午">上午</option>
               <option value="下午">下午</option>
               <option value="晚上">晚上</option>
@@ -352,15 +374,15 @@
           <label>跑步分鐘數</label>
           <div class="num-wrap">
             <button class="num-btn hold-btn" data-target="runMinutes" data-step="-1">−</button>
-            <input inputmode="numeric" id="runMinutes" placeholder="例如 20">
+            <input id="runMinutes" inputmode="numeric" placeholder="例如 20">
             <button class="num-btn hold-btn" data-target="runMinutes" data-step="1">＋</button>
           </div>
         </div>
         <div class="field">
-          <label>跑步機速度</label>
+          <label>跑步機速度（km/h）</label>
           <div class="num-wrap">
             <button class="num-btn hold-btn" data-target="runSpeed" data-step="-0.1">−</button>
-            <input inputmode="decimal" id="runSpeed" placeholder="例如 5.0">
+            <input id="runSpeed" inputmode="decimal" placeholder="例如 5.0">
             <button class="num-btn hold-btn" data-target="runSpeed" data-step="0.1">＋</button>
           </div>
         </div>
@@ -368,13 +390,13 @@
           <label>斜度</label>
           <div class="num-wrap">
             <button class="num-btn hold-btn" data-target="runIncline" data-step="-0.5">−</button>
-            <input inputmode="decimal" id="runIncline" placeholder="例如 1.0">
+            <input id="runIncline" inputmode="decimal" placeholder="例如 1.0">
             <button class="num-btn hold-btn" data-target="runIncline" data-step="0.5">＋</button>
           </div>
         </div>
         <div class="field">
-          <label>距離（可空白）</label>
-          <input inputmode="decimal" id="runDistance" placeholder="例如 1.8">
+          <label>距離（未填時自動推算）</label>
+          <input id="runDistance" inputmode="decimal" placeholder="例如 1.7">
         </div>
         <div class="field">
           <label>備註</label>
@@ -384,7 +406,6 @@
           <button class="primary-btn" id="saveRunBtn">儲存跑步紀錄</button>
           <button class="secondary-btn hidden" id="cancelRunEditBtn">取消修改</button>
         </div>
-        <div class="hint">開啟頁面時自動帶入最近一次跑步資料。</div>
       </div>
       <div class="card">
         <h2>最近跑步紀錄</h2>
@@ -398,11 +419,11 @@
         <div class="grid-2">
           <div class="field">
             <label>日期</label>
-            <input type="date" id="strengthDate">
+            <input class="compact-input" type="text" id="strengthDate" placeholder="2026/04/09">
           </div>
           <div class="field">
             <label>時段</label>
-            <select id="strengthTimeSlot">
+            <select class="compact-input" id="strengthTimeSlot">
               <option value="上午">上午</option>
               <option value="下午">下午</option>
               <option value="晚上">晚上</option>
@@ -416,13 +437,13 @@
         </div>
         <div class="field">
           <label>重量（200→20.0）</label>
-          <input inputmode="decimal" id="strengthWeight" placeholder="例如 20.0 或 200">
+          <input id="strengthWeight" inputmode="decimal" placeholder="例如 20.0 或 200">
         </div>
         <div class="field">
           <label>每組次數</label>
           <div class="num-wrap">
             <button class="num-btn hold-btn" data-target="strengthReps" data-step="-1">−</button>
-            <input inputmode="numeric" id="strengthReps" placeholder="例如 12">
+            <input id="strengthReps" inputmode="numeric" placeholder="例如 12">
             <button class="num-btn hold-btn" data-target="strengthReps" data-step="1">＋</button>
           </div>
         </div>
@@ -430,7 +451,7 @@
           <label>組數</label>
           <div class="num-wrap">
             <button class="num-btn hold-btn" data-target="strengthSets" data-step="-1">−</button>
-            <input inputmode="numeric" id="strengthSets" placeholder="例如 3">
+            <input id="strengthSets" inputmode="numeric" placeholder="例如 3">
             <button class="num-btn hold-btn" data-target="strengthSets" data-step="1">＋</button>
           </div>
         </div>
@@ -442,7 +463,6 @@
           <button class="primary-btn" id="saveStrengthBtn">儲存重訓紀錄</button>
           <button class="secondary-btn hidden" id="cancelStrengthEditBtn">取消修改</button>
         </div>
-        <div class="hint">選定動作後，會帶入同一個動作的前一次紀錄。</div>
       </div>
       <div class="card">
         <h2>最近重訓紀錄</h2>
@@ -466,12 +486,24 @@
         <div id="bodySummary" class="summary-grid"></div>
       </div>
       <div class="card">
+        <h2>體態圖表</h2>
+        <div class="chart-wrap"><canvas id="bodyChart"></canvas></div>
+      </div>
+      <div class="card">
         <h2>跑步</h2>
         <div id="runSummary" class="summary-grid"></div>
       </div>
       <div class="card">
+        <h2>跑步圖表</h2>
+        <div class="chart-wrap"><canvas id="runChart"></canvas></div>
+      </div>
+      <div class="card">
         <h2>重訓</h2>
         <div id="strengthSummary"></div>
+      </div>
+      <div class="card">
+        <h2>重訓圖表</h2>
+        <div class="chart-wrap"><canvas id="strengthChart"></canvas></div>
       </div>
       <div class="footer-link">
         <a id="sheetLink" href="https://docs.google.com/spreadsheets/d/1EqAbQKvkHtlGk81AlXaXHrfmsf0cHV3v2jZ_erTF1sA/edit?gid=1609334560#gid=1609334560" target="_blank" rel="noopener">後台 Sheet</a>
@@ -487,12 +519,7 @@
   </nav>
 
   <div id="msg" class="msg"></div>
-  <div id="loadingOverlay" class="overlay">
-    <div class="overlay-card">
-      <div class="spinner"></div>
-      <div id="loadingText">儲存中...請稍後</div>
-    </div>
-  </div>
+  <div id="savingOverlay" class="overlay"><div class="overlay-card">儲存中...請稍後</div></div>
 
   <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMDGa7Q_oF8YokYuo4ItF4XGUknCGqeXpq-ttDAbLnPUC0t7BbAHkHFhj-4-SpXdJtCA/exec';
@@ -502,21 +529,18 @@
       initData: null,
       currentRange: '1m',
       editing: { body: null, run: null, strength: null },
+      charts: { body: null, run: null, strength: null },
       isSaving: false
     };
 
     const $ = (id) => document.getElementById(id);
 
-    function formatLocalDateInput(date = new Date()) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-
-    function toGasDate(dateInputValue) {
-      if (!dateInputValue) return '';
-      return dateInputValue.replace(/-/g, '/');
+    function localDateString() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}/${m}/${day}`;
     }
 
     function currentTimeSlot() {
@@ -524,6 +548,22 @@
       if (h >= 5 && h < 12) return '上午';
       if (h >= 12 && h < 18) return '下午';
       return '晚上';
+    }
+
+    function normalizeDisplayDate(value) {
+      if (!value) return '';
+      if (typeof value === 'string') {
+        if (/^\d{4}\/\d{2}\/\d{2}$/.test(value)) return value;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value.replace(/-/g, '/');
+        const m = value.match(/^(\d{4}-\d{2}-\d{2})T/);
+        if (m) return m[1].replace(/-/g, '/');
+      }
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}/${m}/${day}`;
     }
 
     function showMsg(text) {
@@ -534,22 +574,55 @@
       showMsg.timer = setTimeout(() => el.classList.remove('show'), 1800);
     }
 
-    function setLoading(show, text = '儲存中...請稍後') {
-      $('loadingText').textContent = text;
-      $('loadingOverlay').classList.toggle('show', show);
+    function showSaving(show) {
+      $('savingOverlay').classList.toggle('show', show);
+      appState.isSaving = show;
     }
 
     async function postData(payload) {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
       const data = await res.json();
       if (!data.ok) throw new Error(data.message || '發生錯誤');
       return data;
     }
 
-    function setupTabs() {
+    function smartParse(value, mode) {
+      const str = String(value || '').trim();
+      if (!str) return '';
+      if (str.includes('.')) return Number(str);
+      if (!/^\d+$/.test(str)) return Number(str);
+      if (mode === 'bodyWeight') {
+        if (str.length === 3 && str.startsWith('1')) return Number(str);
+        if (str.length >= 3) return Number(str) / 10;
+        return Number(str);
+      }
+      if (mode === 'bodyFat' || mode === 'waist' || mode === 'weight') {
+        if (str.length >= 3) return Number(str) / 10;
+        return Number(str);
+      }
+      return Number(str);
+    }
+
+    function setupDefaults() {
+      $('bodyDate').value = localDateString();
+      $('runDate').value = localDateString();
+      $('strengthDate').value = localDateString();
+      $('bodyTimeSlot').value = currentTimeSlot();
+      $('runTimeSlot').value = currentTimeSlot();
+      $('strengthTimeSlot').value = currentTimeSlot();
+      $('sheetLink').href = SHEET_URL;
+    }
+
+    function loadLocalCache() {
+      try { return JSON.parse(localStorage.getItem('sports_records_cache_v3') || '{}'); }
+      catch { return {}; }
+    }
+
+    function saveLocalCache(cache) {
+      localStorage.setItem('sports_records_cache_v3', JSON.stringify(cache));
+    }
+
+    function setupNav() {
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
       });
@@ -575,22 +648,18 @@
     }
 
     function setupHoldButtons() {
-      const holdButtons = document.querySelectorAll('.hold-btn');
-      holdButtons.forEach(btn => {
-        let interval = null;
+      document.querySelectorAll('.hold-btn').forEach(btn => {
+        let timer = null;
         const applyStep = () => adjustInput(btn.dataset.target, Number(btn.dataset.step));
         const start = (e) => {
           e.preventDefault();
           applyStep();
-          interval = setInterval(applyStep, 120);
+          timer = setInterval(applyStep, 120);
         };
-        const stop = () => {
-          if (interval) clearInterval(interval);
-          interval = null;
-        };
+        const stop = () => { if (timer) clearInterval(timer); timer = null; };
         btn.addEventListener('mousedown', start);
         btn.addEventListener('touchstart', start, { passive: false });
-        ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt => btn.addEventListener(evt, stop));
+        ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(evt => btn.addEventListener(evt, stop));
       });
     }
 
@@ -602,46 +671,6 @@
       if (value < 0) value = 0;
       const decimals = String(step).includes('.') ? String(step).split('.')[1].length : 0;
       input.value = value.toFixed(decimals);
-    }
-
-    function smartParse(value, mode) {
-      const str = String(value || '').trim();
-      if (!str) return '';
-      if (str.includes('.')) return Number(str);
-      if (!/^\d+$/.test(str)) return Number(str);
-      if (mode === 'bodyWeight') {
-        if (str.length === 3 && str.startsWith('1')) return Number(str);
-        if (str.length >= 3) return Number(str) / 10;
-        return Number(str);
-      }
-      if (mode === 'bodyFat' || mode === 'waist' || mode === 'weight') {
-        if (str.length >= 3) return Number(str) / 10;
-        return Number(str);
-      }
-      return Number(str);
-    }
-
-    function setDefaultDates() {
-      const today = formatLocalDateInput();
-      $('bodyDate').value = today;
-      $('runDate').value = today;
-      $('strengthDate').value = today;
-      $('bodyTimeSlot').value = currentTimeSlot();
-      $('runTimeSlot').value = currentTimeSlot();
-      $('strengthTimeSlot').value = currentTimeSlot();
-      $('sheetLink').href = SHEET_URL;
-    }
-
-    function loadLocalCache() {
-      try {
-        return JSON.parse(localStorage.getItem('sports_records_cache_v2') || '{}');
-      } catch {
-        return {};
-      }
-    }
-
-    function saveLocalCache(cache) {
-      localStorage.setItem('sports_records_cache_v2', JSON.stringify(cache));
     }
 
     function renderExerciseOptions(exercises) {
@@ -656,21 +685,14 @@
 
     function applyInitialData(data) {
       appState.initData = data;
+      renderExerciseOptions(data.exercises || []);
+
       const cache = loadLocalCache();
-      const latestRun = cache.run || data.latest?.run || {};
-
-      // 體態不要預填上次紀錄
-      $('bodyWeight').value = '';
-      $('bodyFat').value = '';
-      $('bodyWaist').value = '';
-
+      const latestRun = cache.run || data.latest.run || {};
       if (latestRun.minutes !== undefined && latestRun.minutes !== '') $('runMinutes').value = latestRun.minutes;
       if (latestRun.speed !== undefined && latestRun.speed !== '') $('runSpeed').value = latestRun.speed;
       if (latestRun.incline !== undefined && latestRun.incline !== '') $('runIncline').value = latestRun.incline;
       if (latestRun.distance !== undefined && latestRun.distance !== '') $('runDistance').value = latestRun.distance;
-
-      renderExerciseOptions(data.exercises || []);
-      $('sheetLink').href = data.sheetUrl || SHEET_URL;
     }
 
     function setupExerciseAutoFill() {
@@ -683,29 +705,19 @@
       if (!name || !appState.initData) return;
       const cache = loadLocalCache();
       const cachedMap = cache.strengthByExercise || {};
-      const serverMap = appState.initData.latest?.strengthByExercise || {};
-      const data = cachedMap[name] || serverMap[name];
-
-      $('strengthWeight').value = data?.weight ?? '';
-      $('strengthReps').value = data?.reps ?? '';
-      $('strengthSets').value = data?.sets ?? '';
-    }
-
-    async function initApp() {
-      setDefaultDates();
-      setupTabs();
-      setupRangeButtons();
-      setupHoldButtons();
-      setupExerciseAutoFill();
-      bindButtons();
-      const data = await postData({ action: 'init' });
-      applyInitialData(data);
-      await Promise.all([
-        loadRecentRecords('body'),
-        loadRecentRecords('run'),
-        loadRecentRecords('strength')
-      ]);
-      $('bodyWeight').focus();
+      const serverMap = appState.initData.latest.strengthByExercise || {};
+      const row = cachedMap[name] || serverMap[name];
+      if (!row) {
+        $('strengthWeight').value = '';
+        $('strengthReps').value = '';
+        $('strengthSets').value = '';
+        return;
+      }
+      if (!appState.editing.strength) {
+        $('strengthWeight').value = row.weight ?? '';
+        $('strengthReps').value = row.reps ?? '';
+        $('strengthSets').value = row.sets ?? '';
+      }
     }
 
     function bindButtons() {
@@ -717,106 +729,112 @@
       $('cancelStrengthEditBtn').addEventListener('click', cancelStrengthEdit);
     }
 
-    async function guardedSave(fn) {
-      if (appState.isSaving) return;
-      appState.isSaving = true;
-      setLoading(true);
-      try {
-        await fn();
-      } finally {
-        appState.isSaving = false;
-        setLoading(false);
-      }
+    async function initApp() {
+      setupDefaults();
+      setupNav();
+      setupRangeButtons();
+      setupHoldButtons();
+      setupExerciseAutoFill();
+      bindButtons();
+      const data = await postData({ action: 'init' });
+      applyInitialData(data);
+      await Promise.all([loadRecentRecords('body'), loadRecentRecords('run'), loadRecentRecords('strength')]);
+      $('bodyWeight').focus();
     }
 
     async function saveBody() {
-      return guardedSave(async () => {
-        const payload = {
+      if (appState.isSaving) return;
+      try {
+        showSaving(true);
+        const res = await postData({
           action: 'saveBody',
           id: appState.editing.body?.id || '',
-          date: toGasDate($('bodyDate').value),
+          date: normalizeDisplayDate($('bodyDate').value),
           timeSlot: $('bodyTimeSlot').value,
           weight: smartParse($('bodyWeight').value, 'bodyWeight'),
           bodyFat: smartParse($('bodyFat').value, 'bodyFat'),
           waist: smartParse($('bodyWaist').value, 'waist'),
           note: $('bodyNote').value.trim()
-        };
-        const res = await postData(payload);
+        });
         resetBodyForm();
         await reloadAllAfterSave();
         showMsg(res.message);
-      });
+      } catch (err) {
+        showMsg(err.message);
+      } finally {
+        showSaving(false);
+      }
     }
 
     async function saveRun() {
-      return guardedSave(async () => {
-        const payload = {
+      if (appState.isSaving) return;
+      try {
+        showSaving(true);
+        const res = await postData({
           action: 'saveRun',
           id: appState.editing.run?.id || '',
-          date: toGasDate($('runDate').value),
+          date: normalizeDisplayDate($('runDate').value),
           timeSlot: $('runTimeSlot').value,
           minutes: $('runMinutes').value,
           speed: $('runSpeed').value,
           incline: $('runIncline').value,
           distance: $('runDistance').value,
           note: $('runNote').value.trim()
-        };
-        const res = await postData(payload);
+        });
         updateCacheRun(res.data);
         resetRunForm(true);
         await reloadAllAfterSave();
         showMsg(res.message);
-      });
+      } catch (err) {
+        showMsg(err.message);
+      } finally {
+        showSaving(false);
+      }
     }
 
     async function saveStrength() {
-      return guardedSave(async () => {
-        const payload = {
+      if (appState.isSaving) return;
+      try {
+        showSaving(true);
+        const res = await postData({
           action: 'saveStrength',
           id: appState.editing.strength?.id || '',
-          date: toGasDate($('strengthDate').value),
+          date: normalizeDisplayDate($('strengthDate').value),
           timeSlot: $('strengthTimeSlot').value,
           exercise: $('strengthExercise').value.trim(),
           weight: smartParse($('strengthWeight').value, 'weight'),
           reps: $('strengthReps').value,
           sets: $('strengthSets').value,
           note: $('strengthNote').value.trim()
-        };
-        const res = await postData(payload);
+        });
         updateCacheStrength(res.data);
         resetStrengthForm();
         await reloadAllAfterSave();
         showMsg(res.message);
-      });
+      } catch (err) {
+        showMsg(err.message);
+      } finally {
+        showSaving(false);
+      }
     }
 
     function updateCacheRun(data) {
       const cache = loadLocalCache();
-      cache.run = {
-        minutes: data.minutes,
-        speed: data.speed,
-        incline: data.incline,
-        distance: data.distance,
-        timeSlot: data.timeSlot
-      };
+      cache.run = { minutes: data.minutes, speed: data.speed, incline: data.incline, distance: data.distance, timeSlot: data.timeSlot };
       saveLocalCache(cache);
     }
 
     function updateCacheStrength(data) {
       const cache = loadLocalCache();
       cache.strengthByExercise = cache.strengthByExercise || {};
-      cache.strengthByExercise[data.exercise] = {
-        weight: data.weight,
-        reps: data.reps,
-        sets: data.sets
-      };
+      cache.strengthByExercise[data.exercise] = { weight: data.weight, reps: data.reps, sets: data.sets };
       saveLocalCache(cache);
     }
 
     function resetBodyForm() {
       appState.editing.body = null;
       $('cancelBodyEditBtn').classList.add('hidden');
-      $('bodyDate').value = formatLocalDateInput();
+      $('bodyDate').value = localDateString();
       $('bodyTimeSlot').value = currentTimeSlot();
       $('bodyWeight').value = '';
       $('bodyFat').value = '';
@@ -825,10 +843,10 @@
       $('bodyWeight').focus();
     }
 
-    function resetRunForm(keepLatest = false) {
+    function resetRunForm(keepLatest = true) {
       appState.editing.run = null;
       $('cancelRunEditBtn').classList.add('hidden');
-      $('runDate').value = formatLocalDateInput();
+      $('runDate').value = localDateString();
       $('runTimeSlot').value = currentTimeSlot();
       $('runNote').value = '';
       if (!keepLatest) {
@@ -836,20 +854,19 @@
         $('runSpeed').value = '';
         $('runIncline').value = '';
         $('runDistance').value = '';
-      }
-      const cache = loadLocalCache();
-      if (keepLatest && cache.run) {
-        $('runMinutes').value = cache.run.minutes ?? '';
-        $('runSpeed').value = cache.run.speed ?? '';
-        $('runIncline').value = cache.run.incline ?? '';
-        $('runDistance').value = cache.run.distance ?? '';
+      } else {
+        const cache = loadLocalCache();
+        $('runMinutes').value = cache.run?.minutes ?? $('runMinutes').value;
+        $('runSpeed').value = cache.run?.speed ?? $('runSpeed').value;
+        $('runIncline').value = cache.run?.incline ?? $('runIncline').value;
+        $('runDistance').value = cache.run?.distance ?? $('runDistance').value;
       }
     }
 
     function resetStrengthForm() {
       appState.editing.strength = null;
       $('cancelStrengthEditBtn').classList.add('hidden');
-      $('strengthDate').value = formatLocalDateInput();
+      $('strengthDate').value = localDateString();
       $('strengthTimeSlot').value = currentTimeSlot();
       $('strengthExercise').value = '';
       $('strengthWeight').value = '';
@@ -873,16 +890,10 @@
       const box = $('bodyRecords');
       box.innerHTML = rows.length ? '' : '<div class="hint">目前沒有資料</div>';
       rows.forEach(row => {
+        const date = normalizeDisplayDate(row.date);
         const item = document.createElement('div');
         item.className = 'record-item';
-        item.innerHTML = `
-          <div class="record-item-title">${row.weight ?? ''} kg</div>
-          <div class="record-item-meta">${row.date}｜${row.timeSlot}<br>體脂：${row.bodyFat ?? ''}%｜腰圍：${row.waist ?? ''}</div>
-          <div class="record-item-actions">
-            <button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="edit">修改</button>
-            <button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="delete">刪除</button>
-          </div>
-        `;
+        item.innerHTML = `<div class="record-item-title">${row.weight ?? ''} kg</div><div class="record-item-meta">${date}｜${row.timeSlot}<br>體脂：${row.bodyFat ?? ''}%｜腰圍：${row.waist ?? ''}</div><div class="record-item-actions"><button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="edit">修改</button><button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="delete">刪除</button></div>`;
         box.appendChild(item);
       });
       bindRecordActionButtons();
@@ -892,16 +903,10 @@
       const box = $('runRecords');
       box.innerHTML = rows.length ? '' : '<div class="hint">目前沒有資料</div>';
       rows.forEach(row => {
+        const date = normalizeDisplayDate(row.date);
         const item = document.createElement('div');
         item.className = 'record-item';
-        item.innerHTML = `
-          <div class="record-item-title">${row.minutes} 分鐘｜速度 ${row.speed}</div>
-          <div class="record-item-meta">${row.date}｜${row.timeSlot}<br>斜度：${row.incline}｜距離：${row.distance ?? ''}</div>
-          <div class="record-item-actions">
-            <button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="edit">修改</button>
-            <button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="delete">刪除</button>
-          </div>
-        `;
+        item.innerHTML = `<div class="record-item-title">${row.minutes} 分鐘｜速度 ${row.speed}</div><div class="record-item-meta">${date}｜${row.timeSlot}<br>斜度：${row.incline}｜距離：${row.distance ?? ''}</div><div class="record-item-actions"><button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="edit">修改</button><button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="delete">刪除</button></div>`;
         box.appendChild(item);
       });
       bindRecordActionButtons();
@@ -911,38 +916,27 @@
       const box = $('strengthRecords');
       box.innerHTML = rows.length ? '' : '<div class="hint">目前沒有資料</div>';
       rows.forEach(row => {
+        const date = normalizeDisplayDate(row.date);
         const item = document.createElement('div');
         item.className = 'record-item';
-        item.innerHTML = `
-          <div class="record-item-title">${row.exercise}</div>
-          <div class="record-item-meta">${row.date}｜${row.timeSlot}<br>重量：${row.weight}｜次數：${row.reps}｜組數：${row.sets}</div>
-          <div class="record-item-actions">
-            <button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="edit">修改</button>
-            <button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="delete">刪除</button>
-          </div>
-        `;
+        item.innerHTML = `<div class="record-item-title">${row.exercise}</div><div class="record-item-meta">${date}｜${row.timeSlot}<br>重量：${row.weight}｜次數：${row.reps}｜組數：${row.sets}</div><div class="record-item-actions"><button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="edit">修改</button><button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="delete">刪除</button></div>`;
         box.appendChild(item);
       });
       bindRecordActionButtons();
     }
 
     function bindRecordActionButtons() {
-      document.querySelectorAll('[data-action="edit"]').forEach(btn => {
-        btn.onclick = () => editRecord(btn.dataset.type, btn.dataset.id);
-      });
-      document.querySelectorAll('[data-action="delete"]').forEach(btn => {
-        btn.onclick = () => deleteRecord(btn.dataset.type, btn.dataset.id);
-      });
+      document.querySelectorAll('[data-action="edit"]').forEach(btn => btn.onclick = () => editRecord(btn.dataset.type, btn.dataset.id));
+      document.querySelectorAll('[data-action="delete"]').forEach(btn => btn.onclick = () => deleteRecord(btn.dataset.type, btn.dataset.id));
     }
 
     async function editRecord(type, id) {
       const res = await postData({ action: 'getRecentRecords', recordType: type, limit: 30 });
       const row = (res.rows || []).find(r => String(r.id) === String(id));
       if (!row) return showMsg('找不到要修改的紀錄');
-
       if (type === 'body') {
         appState.editing.body = row;
-        $('bodyDate').value = String(row.date || '').replace(/\//g, '-');
+        $('bodyDate').value = normalizeDisplayDate(row.date);
         $('bodyTimeSlot').value = row.timeSlot;
         $('bodyWeight').value = row.weight ?? '';
         $('bodyFat').value = row.bodyFat ?? '';
@@ -951,10 +945,9 @@
         $('cancelBodyEditBtn').classList.remove('hidden');
         switchTab('body');
       }
-
       if (type === 'run') {
         appState.editing.run = row;
-        $('runDate').value = String(row.date || '').replace(/\//g, '-');
+        $('runDate').value = normalizeDisplayDate(row.date);
         $('runTimeSlot').value = row.timeSlot;
         $('runMinutes').value = row.minutes ?? '';
         $('runSpeed').value = row.speed ?? '';
@@ -964,10 +957,9 @@
         $('cancelRunEditBtn').classList.remove('hidden');
         switchTab('run');
       }
-
       if (type === 'strength') {
         appState.editing.strength = row;
-        $('strengthDate').value = String(row.date || '').replace(/\//g, '-');
+        $('strengthDate').value = normalizeDisplayDate(row.date);
         $('strengthTimeSlot').value = row.timeSlot;
         $('strengthExercise').value = row.exercise || '';
         $('strengthWeight').value = row.weight ?? '';
@@ -993,12 +985,7 @@
     async function reloadAllAfterSave() {
       const data = await postData({ action: 'init' });
       applyInitialData(data);
-      await Promise.all([
-        loadRecentRecords('body'),
-        loadRecentRecords('run'),
-        loadRecentRecords('strength'),
-        loadStats(appState.currentRange)
-      ]);
+      await Promise.all([loadRecentRecords('body'), loadRecentRecords('run'), loadRecentRecords('strength'), loadStats(appState.currentRange)]);
     }
 
     async function loadStats(range) {
@@ -1007,7 +994,7 @@
         renderBodySummary(res.body || {});
         renderRunSummary(res.run || {});
         renderStrengthSummary(res.strength || {});
-        $('sheetLink').href = res.sheetUrl || SHEET_URL;
+        renderCharts(res);
       } catch (err) {
         showMsg(err.message);
       }
@@ -1033,9 +1020,9 @@
         summaryCard('跑步次數', run.count ?? 0),
         summaryCard('總分鐘數', run.totalMinutes === '' ? '—' : run.totalMinutes),
         summaryCard('平均每次', run.avgMinutes === '' ? '—' : `${run.avgMinutes} 分`),
-        summaryCard('平均速度', run.avgSpeed === '' ? '—' : run.avgSpeed),
+        summaryCard('平均速度', run.avgSpeed === '' ? '—' : `${run.avgSpeed} km/h`),
         summaryCard('平均斜度', run.avgIncline === '' ? '—' : run.avgIncline),
-        summaryCard('總距離', run.totalDistance === '' ? '—' : run.totalDistance)
+        summaryCard('總距離', run.totalDistance === '' ? '—' : `${run.totalDistance} km`)
       ].join('');
     }
 
@@ -1045,24 +1032,69 @@
         $('strengthSummary').innerHTML = '<div class="hint">目前沒有資料</div>';
         return;
       }
-      $('strengthSummary').innerHTML = rows.map(r => `
-        <div class="record-item" style="margin-bottom:10px;">
-          <div class="record-item-title">${r.exercise}</div>
-          <div class="record-item-meta">
-            次數：${r.count} 次<br>
-            平均重量：${r.avgWeight}<br>
-            最大重量：${r.maxWeight}<br>
-            平均次數：${r.avgReps}<br>
-            平均組數：${r.avgSets}<br>
-            總訓練量：${r.totalVolume}
-          </div>
-        </div>
-      `).join('');
+      $('strengthSummary').innerHTML = rows.map(r => `<div class="record-item" style="margin-bottom:10px;"><div class="record-item-title">${r.exercise}</div><div class="record-item-meta">次數：${r.count} 次<br>平均重量：${r.avgWeight}<br>最大重量：${r.maxWeight}<br>平均次數：${r.avgReps}<br>平均組數：${r.avgSets}<br>總訓練量：${r.totalVolume}</div></div>`).join('');
+    }
+
+    function renderCharts(stats) {
+      renderBodyChart(stats.body?.trend || []);
+      renderRunChart(stats.run?.trend || []);
+      renderStrengthChart(stats.strength?.exercises || []);
+    }
+
+    function destroyChart(name) {
+      if (appState.charts[name]) appState.charts[name].destroy();
+    }
+
+    function renderBodyChart(rows) {
+      destroyChart('body');
+      const labels = rows.map(r => normalizeDisplayDate(r.date));
+      appState.charts.body = new Chart($('bodyChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: '體重', data: rows.map(r => r.weight), tension: 0.25 },
+            { label: '體脂肪', data: rows.map(r => r.bodyFat), tension: 0.25 },
+            { label: '腰圍', data: rows.map(r => r.waist), tension: 0.25 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function renderRunChart(rows) {
+      destroyChart('run');
+      const labels = rows.map(r => normalizeDisplayDate(r.date));
+      appState.charts.run = new Chart($('runChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: '分鐘數', data: rows.map(r => r.minutes), tension: 0.25 },
+            { label: '速度', data: rows.map(r => r.speed), tension: 0.25 },
+            { label: '斜度', data: rows.map(r => r.incline), tension: 0.25 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function renderStrengthChart(rows) {
+      destroyChart('strength');
+      const top = rows.slice(0, 8);
+      appState.charts.strength = new Chart($('strengthChart'), {
+        type: 'bar',
+        data: {
+          labels: top.map(r => r.exercise),
+          datasets: [{ label: '總訓練量', data: top.map(r => r.totalVolume) }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
     }
 
     initApp().catch(err => {
       console.error(err);
-      showMsg('初始化失敗，請先確認 GAS 與部署狀態');
+      showMsg('初始化失敗，請確認 GAS 是否重新部署');
     });
   </script>
 </body>
