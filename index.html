@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>運動紀錄系統</title>
+  <title>運動紀錄系統 v2</title>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -16,147 +16,508 @@
       --radius: 18px;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
-    .app { max-width: 720px; margin: 0 auto; padding: 16px 16px 96px; }
-    .topbar { position: sticky; top: 0; z-index: 20; background: rgba(245,247,251,0.95); backdrop-filter: blur(10px); padding: 10px 0 14px; }
-    .title { font-size: 22px; font-weight: 700; margin: 0 0 10px; }
-    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .tab-btn { border: 0; background: #e7eefc; color: #24468f; padding: 12px 8px; border-radius: 14px; font-size: 14px; font-weight: 700; }
-    .tab-btn.active { background: var(--primary); color: #fff; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px 16px 104px;
+    }
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(245,247,251,0.96);
+      backdrop-filter: blur(10px);
+      padding: 10px 0 12px;
+    }
+    .title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
     .panel { display: none; }
     .panel.active { display: block; }
-    .card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-top: 14px; box-shadow: var(--shadow); }
-    .card h2 { margin: 0 0 12px; font-size: 18px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 14px;
+      box-shadow: var(--shadow);
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
     .field { margin-bottom: 12px; }
-    .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-    input, select, textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-size: 16px; background: #fff; }
-    textarea { min-height: 80px; resize: vertical; }
-    .num-wrap { display: grid; grid-template-columns: 56px 1fr 56px; gap: 8px; align-items: center; }
-    .num-btn { height: 48px; border: 0; border-radius: 12px; background: #edf2ff; color: #23408e; font-size: 24px; font-weight: 700; }
-    .primary-btn, .secondary-btn, .tiny-btn, .range-btn { border: 0; border-radius: 14px; padding: 13px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 16px;
+      background: #fff;
+    }
+    input[type="date"] {
+      min-width: 0;
+      width: 100%;
+    }
+    textarea {
+      min-height: 78px;
+      resize: vertical;
+    }
+    .num-wrap {
+      display: grid;
+      grid-template-columns: 56px 1fr 56px;
+      gap: 8px;
+      align-items: center;
+    }
+    .num-btn {
+      height: 48px;
+      border: 0;
+      border-radius: 12px;
+      background: #edf2ff;
+      color: #23408e;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .primary-btn, .secondary-btn, .tiny-btn, .range-btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
     .primary-btn { background: var(--primary); color: #fff; }
     .secondary-btn { background: #e8eef9; color: #24468f; }
-    .tiny-btn { padding: 8px 10px; font-size: 13px; background: #eff4ff; color: #23408e; border-radius: 10px; }
-    .range-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-    .range-btn { background: #e7eefc; color: #24468f; padding: 10px 12px; border-radius: 999px; }
-    .range-btn.active { background: var(--primary); color: #fff; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
-    .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .summary-card { background: #f8fbff; border: 1px solid #e0e9f8; border-radius: 14px; padding: 12px; }
-    .summary-card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    .summary-card .value { font-size: 24px; font-weight: 800; }
-    .record-list { display: grid; gap: 10px; margin-top: 12px; }
-    .record-item { border: 1px solid var(--border); border-radius: 14px; padding: 12px; background: #fff; }
-    .record-item-title { font-weight: 800; margin-bottom: 6px; }
-    .record-item-meta { font-size: 13px; color: var(--muted); line-height: 1.6; }
-    .record-item-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .footer-link { text-align: right; margin-top: 10px; }
-    .footer-link a { font-size: 12px; color: var(--muted); text-decoration: none; }
-    .msg { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(17,24,39,0.92); color: #fff; padding: 12px 16px; border-radius: 999px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 50; max-width: calc(100% - 24px); }
+    .tiny-btn {
+      padding: 8px 10px;
+      font-size: 13px;
+      background: #eff4ff;
+      color: #23408e;
+      border-radius: 10px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .summary-card {
+      background: #f8fbff;
+      border: 1px solid #e0e9f8;
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .summary-card .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .summary-card .value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .range-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .range-btn {
+      background: #e7eefc;
+      color: #24468f;
+      padding: 10px 12px;
+      border-radius: 999px;
+    }
+    .range-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+    .record-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .record-item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+    }
+    .record-item-title {
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .record-item-meta {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .record-item-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .footer-link {
+      text-align: right;
+      margin-top: 10px;
+    }
+    .footer-link a {
+      font-size: 12px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .msg {
+      position: fixed;
+      left: 50%;
+      bottom: 94px;
+      transform: translateX(-50%);
+      background: rgba(17,24,39,0.92);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 80;
+      max-width: calc(100% - 24px);
+      white-space: nowrap;
+    }
     .msg.show { opacity: 1; }
     .hidden { display:none !important; }
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.98);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      z-index: 30;
+      backdrop-filter: blur(12px);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-btn {
+      border: 0;
+      background: transparent;
+      padding: 10px 4px 12px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-btn .icon { font-size: 19px; }
+    .nav-btn.active { color: var(--primary); }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+    }
+    .overlay.show { display: flex; }
+    .overlay-card {
+      background: white;
+      border-radius: 18px;
+      padding: 22px 18px;
+      min-width: 220px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .spinner {
+      width: 34px;
+      height: 34px;
+      border: 4px solid #dbeafe;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      animation: spin .9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 520px) {
-      .grid-2, .summary-grid { grid-template-columns: 1fr; }
+      .grid-2, .summary-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="topbar">
-      <h1 class="title">運動紀錄系統</h1>
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="body">體重</button>
-        <button class="tab-btn" data-tab="run">跑步</button>
-        <button class="tab-btn" data-tab="strength">重訓</button>
-        <button class="tab-btn" data-tab="stats">統計</button>
-      </div>
+    <div class="header">
+      <h1 class="title">運動紀錄系統 v2</h1>
+      <div class="subtitle">手機版運動紀錄</div>
     </div>
 
     <section id="panel-body" class="panel active">
       <div class="card">
         <h2>體態紀錄</h2>
         <div class="grid-2">
-          <div class="field"><label>日期</label><input type="date" id="bodyDate"></div>
-          <div class="field"><label>時段</label><select id="bodyTimeSlot"><option value="上午">上午</option><option value="下午">下午</option><option value="晚上">晚上</option></select></div>
+          <div class="field">
+            <label>日期</label>
+            <input type="date" id="bodyDate">
+          </div>
+          <div class="field">
+            <label>時段</label>
+            <select id="bodyTimeSlot">
+              <option value="上午">上午</option>
+              <option value="下午">下午</option>
+              <option value="晚上">晚上</option>
+            </select>
+          </div>
         </div>
-        <div class="field"><label>體重（912→91.2、104→104）</label><input inputmode="decimal" id="bodyWeight" placeholder="例如 70.4 或 912"></div>
-        <div class="field"><label>體脂肪（283→28.3）</label><input inputmode="decimal" id="bodyFat" placeholder="例如 28.3 或 283"></div>
-        <div class="field"><label>腰圍（825→82.5）</label><input inputmode="decimal" id="bodyWaist" placeholder="例如 82.5 或 825"></div>
-        <div class="field"><label>備註</label><textarea id="bodyNote" placeholder="可空白"></textarea></div>
+        <div class="field">
+          <label>體重（912→91.2、104→104）</label>
+          <input inputmode="decimal" id="bodyWeight" placeholder="例如 70.4 或 912">
+        </div>
+        <div class="field">
+          <label>體脂肪（283→28.3）</label>
+          <input inputmode="decimal" id="bodyFat" placeholder="例如 28.3 或 283">
+        </div>
+        <div class="field">
+          <label>腰圍（825→82.5）</label>
+          <input inputmode="decimal" id="bodyWaist" placeholder="例如 82.5 或 825">
+        </div>
+        <div class="field">
+          <label>備註</label>
+          <textarea id="bodyNote" placeholder="可空白"></textarea>
+        </div>
         <div class="actions">
           <button class="primary-btn" id="saveBodyBtn">儲存體態紀錄</button>
           <button class="secondary-btn hidden" id="cancelBodyEditBtn">取消修改</button>
         </div>
       </div>
-      <div class="card"><h2>最近體態紀錄</h2><div id="bodyRecords" class="record-list"></div></div>
+      <div class="card">
+        <h2>最近體態紀錄</h2>
+        <div id="bodyRecords" class="record-list"></div>
+      </div>
     </section>
 
     <section id="panel-run" class="panel">
       <div class="card">
         <h2>跑步紀錄</h2>
         <div class="grid-2">
-          <div class="field"><label>日期</label><input type="date" id="runDate"></div>
-          <div class="field"><label>時段</label><select id="runTimeSlot"><option value="上午">上午</option><option value="下午">下午</option><option value="晚上">晚上</option></select></div>
+          <div class="field">
+            <label>日期</label>
+            <input type="date" id="runDate">
+          </div>
+          <div class="field">
+            <label>時段</label>
+            <select id="runTimeSlot">
+              <option value="上午">上午</option>
+              <option value="下午">下午</option>
+              <option value="晚上">晚上</option>
+            </select>
+          </div>
         </div>
-        <div class="field"><label>跑步分鐘數</label><div class="num-wrap"><button class="num-btn hold-btn" data-target="runMinutes" data-step="-1">−</button><input inputmode="numeric" id="runMinutes"><button class="num-btn hold-btn" data-target="runMinutes" data-step="1">＋</button></div></div>
-        <div class="field"><label>跑步機速度</label><div class="num-wrap"><button class="num-btn hold-btn" data-target="runSpeed" data-step="-0.1">−</button><input inputmode="decimal" id="runSpeed"><button class="num-btn hold-btn" data-target="runSpeed" data-step="0.1">＋</button></div></div>
-        <div class="field"><label>斜度</label><div class="num-wrap"><button class="num-btn hold-btn" data-target="runIncline" data-step="-0.5">−</button><input inputmode="decimal" id="runIncline"><button class="num-btn hold-btn" data-target="runIncline" data-step="0.5">＋</button></div></div>
-        <div class="field"><label>距離（可空白）</label><input inputmode="decimal" id="runDistance"></div>
-        <div class="field"><label>備註</label><textarea id="runNote" placeholder="可空白"></textarea></div>
-        <div class="actions"><button class="primary-btn" id="saveRunBtn">儲存跑步紀錄</button><button class="secondary-btn hidden" id="cancelRunEditBtn">取消修改</button></div>
-        <div class="hint">頁面開啟時會先套入最近一次跑步資料；同一支手機也會優先用本機快取。</div>
+        <div class="field">
+          <label>跑步分鐘數</label>
+          <div class="num-wrap">
+            <button class="num-btn hold-btn" data-target="runMinutes" data-step="-1">−</button>
+            <input inputmode="numeric" id="runMinutes" placeholder="例如 20">
+            <button class="num-btn hold-btn" data-target="runMinutes" data-step="1">＋</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>跑步機速度</label>
+          <div class="num-wrap">
+            <button class="num-btn hold-btn" data-target="runSpeed" data-step="-0.1">−</button>
+            <input inputmode="decimal" id="runSpeed" placeholder="例如 5.0">
+            <button class="num-btn hold-btn" data-target="runSpeed" data-step="0.1">＋</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>斜度</label>
+          <div class="num-wrap">
+            <button class="num-btn hold-btn" data-target="runIncline" data-step="-0.5">−</button>
+            <input inputmode="decimal" id="runIncline" placeholder="例如 1.0">
+            <button class="num-btn hold-btn" data-target="runIncline" data-step="0.5">＋</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>距離（可空白）</label>
+          <input inputmode="decimal" id="runDistance" placeholder="例如 1.8">
+        </div>
+        <div class="field">
+          <label>備註</label>
+          <textarea id="runNote" placeholder="可空白"></textarea>
+        </div>
+        <div class="actions">
+          <button class="primary-btn" id="saveRunBtn">儲存跑步紀錄</button>
+          <button class="secondary-btn hidden" id="cancelRunEditBtn">取消修改</button>
+        </div>
+        <div class="hint">開啟頁面時自動帶入最近一次跑步資料。</div>
       </div>
-      <div class="card"><h2>最近跑步紀錄</h2><div id="runRecords" class="record-list"></div></div>
+      <div class="card">
+        <h2>最近跑步紀錄</h2>
+        <div id="runRecords" class="record-list"></div>
+      </div>
     </section>
 
     <section id="panel-strength" class="panel">
       <div class="card">
         <h2>重訓紀錄</h2>
         <div class="grid-2">
-          <div class="field"><label>日期</label><input type="date" id="strengthDate"></div>
-          <div class="field"><label>時段</label><select id="strengthTimeSlot"><option value="上午">上午</option><option value="下午">下午</option><option value="晚上">晚上</option></select></div>
+          <div class="field">
+            <label>日期</label>
+            <input type="date" id="strengthDate">
+          </div>
+          <div class="field">
+            <label>時段</label>
+            <select id="strengthTimeSlot">
+              <option value="上午">上午</option>
+              <option value="下午">下午</option>
+              <option value="晚上">晚上</option>
+            </select>
+          </div>
         </div>
-        <div class="field"><label>動作名稱</label><input list="exerciseOptions" id="strengthExercise" placeholder="例如 胸推機"><datalist id="exerciseOptions"></datalist></div>
-        <div class="field"><label>重量（200→20.0）</label><input inputmode="decimal" id="strengthWeight" placeholder="例如 20.0 或 200"></div>
-        <div class="field"><label>每組次數</label><div class="num-wrap"><button class="num-btn hold-btn" data-target="strengthReps" data-step="-1">−</button><input inputmode="numeric" id="strengthReps"><button class="num-btn hold-btn" data-target="strengthReps" data-step="1">＋</button></div></div>
-        <div class="field"><label>組數</label><div class="num-wrap"><button class="num-btn hold-btn" data-target="strengthSets" data-step="-1">−</button><input inputmode="numeric" id="strengthSets"><button class="num-btn hold-btn" data-target="strengthSets" data-step="1">＋</button></div></div>
-        <div class="field"><label>備註</label><textarea id="strengthNote" placeholder="可空白"></textarea></div>
-        <div class="actions"><button class="primary-btn" id="saveStrengthBtn">儲存重訓紀錄</button><button class="secondary-btn hidden" id="cancelStrengthEditBtn">取消修改</button></div>
-        <div class="hint">選定動作後，會自動帶入該動作最近一次的重量、次數、組數。</div>
+        <div class="field">
+          <label>動作名稱</label>
+          <input list="exerciseOptions" id="strengthExercise" placeholder="例如 胸推機">
+          <datalist id="exerciseOptions"></datalist>
+        </div>
+        <div class="field">
+          <label>重量（200→20.0）</label>
+          <input inputmode="decimal" id="strengthWeight" placeholder="例如 20.0 或 200">
+        </div>
+        <div class="field">
+          <label>每組次數</label>
+          <div class="num-wrap">
+            <button class="num-btn hold-btn" data-target="strengthReps" data-step="-1">−</button>
+            <input inputmode="numeric" id="strengthReps" placeholder="例如 12">
+            <button class="num-btn hold-btn" data-target="strengthReps" data-step="1">＋</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>組數</label>
+          <div class="num-wrap">
+            <button class="num-btn hold-btn" data-target="strengthSets" data-step="-1">−</button>
+            <input inputmode="numeric" id="strengthSets" placeholder="例如 3">
+            <button class="num-btn hold-btn" data-target="strengthSets" data-step="1">＋</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>備註</label>
+          <textarea id="strengthNote" placeholder="可空白"></textarea>
+        </div>
+        <div class="actions">
+          <button class="primary-btn" id="saveStrengthBtn">儲存重訓紀錄</button>
+          <button class="secondary-btn hidden" id="cancelStrengthEditBtn">取消修改</button>
+        </div>
+        <div class="hint">選定動作後，會帶入同一個動作的前一次紀錄。</div>
       </div>
-      <div class="card"><h2>最近重訓紀錄</h2><div id="strengthRecords" class="record-list"></div></div>
+      <div class="card">
+        <h2>最近重訓紀錄</h2>
+        <div id="strengthRecords" class="record-list"></div>
+      </div>
     </section>
 
     <section id="panel-stats" class="panel">
-      <div class="card"><h2>統計摘要</h2><div class="range-btns"><button class="range-btn active" data-range="1m">近1個月</button><button class="range-btn" data-range="3m">近3個月</button><button class="range-btn" data-range="6m">近6個月</button><button class="range-btn" data-range="1y">近1年</button><button class="range-btn" data-range="all">全部</button></div></div>
-      <div class="card"><h2>體態</h2><div id="bodySummary" class="summary-grid"></div></div>
-      <div class="card"><h2>跑步</h2><div id="runSummary" class="summary-grid"></div></div>
-      <div class="card"><h2>重訓</h2><div id="strengthSummary"></div></div>
-      <div class="footer-link"><a id="sheetLink" href="#" target="_blank" rel="noopener">後台 Sheet</a></div>
+      <div class="card">
+        <h2>統計摘要</h2>
+        <div class="range-btns">
+          <button class="range-btn active" data-range="1m">近1個月</button>
+          <button class="range-btn" data-range="3m">近3個月</button>
+          <button class="range-btn" data-range="6m">近6個月</button>
+          <button class="range-btn" data-range="1y">近1年</button>
+          <button class="range-btn" data-range="all">全部</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>體態</h2>
+        <div id="bodySummary" class="summary-grid"></div>
+      </div>
+      <div class="card">
+        <h2>跑步</h2>
+        <div id="runSummary" class="summary-grid"></div>
+      </div>
+      <div class="card">
+        <h2>重訓</h2>
+        <div id="strengthSummary"></div>
+      </div>
+      <div class="footer-link">
+        <a id="sheetLink" href="https://docs.google.com/spreadsheets/d/1EqAbQKvkHtlGk81AlXaXHrfmsf0cHV3v2jZ_erTF1sA/edit?gid=1609334560#gid=1609334560" target="_blank" rel="noopener">後台 Sheet</a>
+      </div>
     </section>
   </div>
 
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="body"><span class="icon">⚖️</span><span>體重</span></button>
+    <button class="nav-btn" data-tab="run"><span class="icon">🏃</span><span>跑步</span></button>
+    <button class="nav-btn" data-tab="strength"><span class="icon">🏋️</span><span>重訓</span></button>
+    <button class="nav-btn" data-tab="stats"><span class="icon">📊</span><span>統計</span></button>
+  </nav>
+
   <div id="msg" class="msg"></div>
+  <div id="loadingOverlay" class="overlay">
+    <div class="overlay-card">
+      <div class="spinner"></div>
+      <div id="loadingText">儲存中...請稍後</div>
+    </div>
+  </div>
 
   <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMDGa7Q_oF8YokYuo4ItF4XGUknCGqeXpq-ttDAbLnPUC0t7BbAHkHFhj-4-SpXdJtCA/exec';
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1EqAbQKvkHtlGk81AlXaXHrfmsf0cHV3v2jZ_erTF1sA/edit?gid=1609334560#gid=1609334560';
 
     const appState = {
       initData: null,
       currentRange: '1m',
-      editing: { body: null, run: null, strength: null }
+      editing: { body: null, run: null, strength: null },
+      isSaving: false
     };
 
     const $ = (id) => document.getElementById(id);
-    const todayInputValue = () => {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
+
+    function formatLocalDateInput(date = new Date()) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function toGasDate(dateInputValue) {
+      if (!dateInputValue) return '';
+      return dateInputValue.replace(/-/g, '/');
+    }
 
     function currentTimeSlot() {
       const h = new Date().getHours();
@@ -173,24 +534,33 @@
       showMsg.timer = setTimeout(() => el.classList.remove('show'), 1800);
     }
 
+    function setLoading(show, text = '儲存中...請稍後') {
+      $('loadingText').textContent = text;
+      $('loadingOverlay').classList.toggle('show', show);
+    }
+
     async function postData(payload) {
-      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
       const data = await res.json();
       if (!data.ok) throw new Error(data.message || '發生錯誤');
       return data;
     }
 
     function setupTabs() {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-          document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-          btn.classList.add('active');
-          $('panel-' + btn.dataset.tab).classList.add('active');
-          if (btn.dataset.tab === 'stats') loadStats(appState.currentRange);
-          if (btn.dataset.tab === 'body') setTimeout(() => $('bodyWeight').focus(), 50);
-        });
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
       });
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      $('panel-' + tab).classList.add('active');
+      if (tab === 'stats') loadStats(appState.currentRange);
+      if (tab === 'body') setTimeout(() => $('bodyWeight').focus(), 50);
     }
 
     function setupRangeButtons() {
@@ -252,43 +622,26 @@
     }
 
     function setDefaultDates() {
-      $('bodyDate').value = todayInputValue();
-      $('runDate').value = todayInputValue();
-      $('strengthDate').value = todayInputValue();
+      const today = formatLocalDateInput();
+      $('bodyDate').value = today;
+      $('runDate').value = today;
+      $('strengthDate').value = today;
       $('bodyTimeSlot').value = currentTimeSlot();
       $('runTimeSlot').value = currentTimeSlot();
       $('strengthTimeSlot').value = currentTimeSlot();
+      $('sheetLink').href = SHEET_URL;
     }
 
     function loadLocalCache() {
       try {
-        return JSON.parse(localStorage.getItem('fitness_app_cache') || '{}');
+        return JSON.parse(localStorage.getItem('sports_records_cache_v2') || '{}');
       } catch {
         return {};
       }
     }
 
     function saveLocalCache(cache) {
-      localStorage.setItem('fitness_app_cache', JSON.stringify(cache));
-    }
-
-    function applyInitialData(data) {
-      appState.initData = data;
-      const cache = loadLocalCache();
-      const latestBody = cache.body || data.latest.body || {};
-      const latestRun = cache.run || data.latest.run || {};
-
-      if (latestBody.weight !== undefined && latestBody.weight !== '') $('bodyWeight').value = latestBody.weight;
-      if (latestBody.bodyFat !== undefined && latestBody.bodyFat !== '') $('bodyFat').value = latestBody.bodyFat;
-      if (latestBody.waist !== undefined && latestBody.waist !== '') $('bodyWaist').value = latestBody.waist;
-
-      if (latestRun.minutes !== undefined && latestRun.minutes !== '') $('runMinutes').value = latestRun.minutes;
-      if (latestRun.speed !== undefined && latestRun.speed !== '') $('runSpeed').value = latestRun.speed;
-      if (latestRun.incline !== undefined && latestRun.incline !== '') $('runIncline').value = latestRun.incline;
-      if (latestRun.distance !== undefined && latestRun.distance !== '') $('runDistance').value = latestRun.distance;
-
-      renderExerciseOptions(data.exercises || []);
-      $('sheetLink').href = data.sheetUrl || '#';
+      localStorage.setItem('sports_records_cache_v2', JSON.stringify(cache));
     }
 
     function renderExerciseOptions(exercises) {
@@ -301,22 +654,41 @@
       });
     }
 
-    function setupExerciseAutoFill() {
-      $('strengthExercise').addEventListener('change', applyStrengthByExerciseLatest);
-      $('strengthExercise').addEventListener('blur', applyStrengthByExerciseLatest);
+    function applyInitialData(data) {
+      appState.initData = data;
+      const cache = loadLocalCache();
+      const latestRun = cache.run || data.latest?.run || {};
+
+      // 體態不要預填上次紀錄
+      $('bodyWeight').value = '';
+      $('bodyFat').value = '';
+      $('bodyWaist').value = '';
+
+      if (latestRun.minutes !== undefined && latestRun.minutes !== '') $('runMinutes').value = latestRun.minutes;
+      if (latestRun.speed !== undefined && latestRun.speed !== '') $('runSpeed').value = latestRun.speed;
+      if (latestRun.incline !== undefined && latestRun.incline !== '') $('runIncline').value = latestRun.incline;
+      if (latestRun.distance !== undefined && latestRun.distance !== '') $('runDistance').value = latestRun.distance;
+
+      renderExerciseOptions(data.exercises || []);
+      $('sheetLink').href = data.sheetUrl || SHEET_URL;
     }
 
-    function applyStrengthByExerciseLatest() {
+    function setupExerciseAutoFill() {
+      $('strengthExercise').addEventListener('change', fillStrengthByExercise);
+      $('strengthExercise').addEventListener('blur', fillStrengthByExercise);
+    }
+
+    function fillStrengthByExercise() {
       const name = $('strengthExercise').value.trim();
       if (!name || !appState.initData) return;
       const cache = loadLocalCache();
       const cachedMap = cache.strengthByExercise || {};
-      const serverMap = appState.initData.latest.strengthByExercise || {};
+      const serverMap = appState.initData.latest?.strengthByExercise || {};
       const data = cachedMap[name] || serverMap[name];
-      if (!data) return;
-      if (!$('strengthWeight').value) $('strengthWeight').value = data.weight ?? '';
-      if (!$('strengthReps').value) $('strengthReps').value = data.reps ?? '';
-      if (!$('strengthSets').value) $('strengthSets').value = data.sets ?? '';
+
+      $('strengthWeight').value = data?.weight ?? '';
+      $('strengthReps').value = data?.reps ?? '';
+      $('strengthSets').value = data?.sets ?? '';
     }
 
     async function initApp() {
@@ -328,7 +700,11 @@
       bindButtons();
       const data = await postData({ action: 'init' });
       applyInitialData(data);
-      await Promise.all([loadRecentRecords('body'), loadRecentRecords('run'), loadRecentRecords('strength')]);
+      await Promise.all([
+        loadRecentRecords('body'),
+        loadRecentRecords('run'),
+        loadRecentRecords('strength')
+      ]);
       $('bodyWeight').focus();
     }
 
@@ -341,12 +717,24 @@
       $('cancelStrengthEditBtn').addEventListener('click', cancelStrengthEdit);
     }
 
-    async function saveBody() {
+    async function guardedSave(fn) {
+      if (appState.isSaving) return;
+      appState.isSaving = true;
+      setLoading(true);
       try {
+        await fn();
+      } finally {
+        appState.isSaving = false;
+        setLoading(false);
+      }
+    }
+
+    async function saveBody() {
+      return guardedSave(async () => {
         const payload = {
           action: 'saveBody',
           id: appState.editing.body?.id || '',
-          date: normalizeDateForGas($('bodyDate').value),
+          date: toGasDate($('bodyDate').value),
           timeSlot: $('bodyTimeSlot').value,
           weight: smartParse($('bodyWeight').value, 'bodyWeight'),
           bodyFat: smartParse($('bodyFat').value, 'bodyFat'),
@@ -354,21 +742,18 @@
           note: $('bodyNote').value.trim()
         };
         const res = await postData(payload);
-        updateCacheBody(res.data);
-        resetBodyForm(true);
+        resetBodyForm();
         await reloadAllAfterSave();
         showMsg(res.message);
-      } catch (err) {
-        showMsg(err.message);
-      }
+      });
     }
 
     async function saveRun() {
-      try {
+      return guardedSave(async () => {
         const payload = {
           action: 'saveRun',
           id: appState.editing.run?.id || '',
-          date: normalizeDateForGas($('runDate').value),
+          date: toGasDate($('runDate').value),
           timeSlot: $('runTimeSlot').value,
           minutes: $('runMinutes').value,
           speed: $('runSpeed').value,
@@ -381,17 +766,15 @@
         resetRunForm(true);
         await reloadAllAfterSave();
         showMsg(res.message);
-      } catch (err) {
-        showMsg(err.message);
-      }
+      });
     }
 
     async function saveStrength() {
-      try {
+      return guardedSave(async () => {
         const payload = {
           action: 'saveStrength',
           id: appState.editing.strength?.id || '',
-          date: normalizeDateForGas($('strengthDate').value),
+          date: toGasDate($('strengthDate').value),
           timeSlot: $('strengthTimeSlot').value,
           exercise: $('strengthExercise').value.trim(),
           weight: smartParse($('strengthWeight').value, 'weight'),
@@ -401,51 +784,51 @@
         };
         const res = await postData(payload);
         updateCacheStrength(res.data);
-        resetStrengthForm(true);
+        resetStrengthForm();
         await reloadAllAfterSave();
         showMsg(res.message);
-      } catch (err) {
-        showMsg(err.message);
-      }
-    }
-
-    function updateCacheBody(data) {
-      const cache = loadLocalCache();
-      cache.body = { weight: data.weight, bodyFat: data.bodyFat, waist: data.waist, timeSlot: data.timeSlot };
-      saveLocalCache(cache);
+      });
     }
 
     function updateCacheRun(data) {
       const cache = loadLocalCache();
-      cache.run = { minutes: data.minutes, speed: data.speed, incline: data.incline, distance: data.distance, timeSlot: data.timeSlot };
+      cache.run = {
+        minutes: data.minutes,
+        speed: data.speed,
+        incline: data.incline,
+        distance: data.distance,
+        timeSlot: data.timeSlot
+      };
       saveLocalCache(cache);
     }
 
     function updateCacheStrength(data) {
       const cache = loadLocalCache();
       cache.strengthByExercise = cache.strengthByExercise || {};
-      cache.strengthByExercise[data.exercise] = { weight: data.weight, reps: data.reps, sets: data.sets };
+      cache.strengthByExercise[data.exercise] = {
+        weight: data.weight,
+        reps: data.reps,
+        sets: data.sets
+      };
       saveLocalCache(cache);
     }
 
-    function resetBodyForm(keepLatest = false) {
+    function resetBodyForm() {
       appState.editing.body = null;
       $('cancelBodyEditBtn').classList.add('hidden');
-      $('bodyDate').value = todayInputValue();
+      $('bodyDate').value = formatLocalDateInput();
       $('bodyTimeSlot').value = currentTimeSlot();
+      $('bodyWeight').value = '';
+      $('bodyFat').value = '';
+      $('bodyWaist').value = '';
       $('bodyNote').value = '';
-      if (!keepLatest) {
-        $('bodyWeight').value = '';
-        $('bodyFat').value = '';
-        $('bodyWaist').value = '';
-      }
       $('bodyWeight').focus();
     }
 
     function resetRunForm(keepLatest = false) {
       appState.editing.run = null;
       $('cancelRunEditBtn').classList.add('hidden');
-      $('runDate').value = todayInputValue();
+      $('runDate').value = formatLocalDateInput();
       $('runTimeSlot').value = currentTimeSlot();
       $('runNote').value = '';
       if (!keepLatest) {
@@ -466,7 +849,7 @@
     function resetStrengthForm() {
       appState.editing.strength = null;
       $('cancelStrengthEditBtn').classList.add('hidden');
-      $('strengthDate').value = todayInputValue();
+      $('strengthDate').value = formatLocalDateInput();
       $('strengthTimeSlot').value = currentTimeSlot();
       $('strengthExercise').value = '';
       $('strengthWeight').value = '';
@@ -475,13 +858,9 @@
       $('strengthNote').value = '';
     }
 
-    function cancelBodyEdit() { resetBodyForm(false); }
+    function cancelBodyEdit() { resetBodyForm(); }
     function cancelRunEdit() { resetRunForm(false); }
     function cancelStrengthEdit() { resetStrengthForm(); }
-
-    function normalizeDateForGas(v) {
-      return v ? v.replace(/-/g, '/') : '';
-    }
 
     async function loadRecentRecords(type) {
       const res = await postData({ action: 'getRecentRecords', recordType: type, limit: 10 });
@@ -496,7 +875,14 @@
       rows.forEach(row => {
         const item = document.createElement('div');
         item.className = 'record-item';
-        item.innerHTML = `<div class="record-item-title">${row.weight ?? ''} kg</div><div class="record-item-meta">${row.date}｜${row.timeSlot}<br>體脂：${row.bodyFat ?? ''}%｜腰圍：${row.waist ?? ''}</div><div class="record-item-actions"><button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="edit">修改</button><button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="delete">刪除</button></div>`;
+        item.innerHTML = `
+          <div class="record-item-title">${row.weight ?? ''} kg</div>
+          <div class="record-item-meta">${row.date}｜${row.timeSlot}<br>體脂：${row.bodyFat ?? ''}%｜腰圍：${row.waist ?? ''}</div>
+          <div class="record-item-actions">
+            <button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="edit">修改</button>
+            <button class="tiny-btn" data-id="${row.id}" data-type="body" data-action="delete">刪除</button>
+          </div>
+        `;
         box.appendChild(item);
       });
       bindRecordActionButtons();
@@ -508,7 +894,14 @@
       rows.forEach(row => {
         const item = document.createElement('div');
         item.className = 'record-item';
-        item.innerHTML = `<div class="record-item-title">${row.minutes} 分鐘｜速度 ${row.speed}</div><div class="record-item-meta">${row.date}｜${row.timeSlot}<br>斜度：${row.incline}｜距離：${row.distance ?? ''}</div><div class="record-item-actions"><button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="edit">修改</button><button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="delete">刪除</button></div>`;
+        item.innerHTML = `
+          <div class="record-item-title">${row.minutes} 分鐘｜速度 ${row.speed}</div>
+          <div class="record-item-meta">${row.date}｜${row.timeSlot}<br>斜度：${row.incline}｜距離：${row.distance ?? ''}</div>
+          <div class="record-item-actions">
+            <button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="edit">修改</button>
+            <button class="tiny-btn" data-id="${row.id}" data-type="run" data-action="delete">刪除</button>
+          </div>
+        `;
         box.appendChild(item);
       });
       bindRecordActionButtons();
@@ -520,24 +913,36 @@
       rows.forEach(row => {
         const item = document.createElement('div');
         item.className = 'record-item';
-        item.innerHTML = `<div class="record-item-title">${row.exercise}</div><div class="record-item-meta">${row.date}｜${row.timeSlot}<br>重量：${row.weight}｜次數：${row.reps}｜組數：${row.sets}</div><div class="record-item-actions"><button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="edit">修改</button><button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="delete">刪除</button></div>`;
+        item.innerHTML = `
+          <div class="record-item-title">${row.exercise}</div>
+          <div class="record-item-meta">${row.date}｜${row.timeSlot}<br>重量：${row.weight}｜次數：${row.reps}｜組數：${row.sets}</div>
+          <div class="record-item-actions">
+            <button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="edit">修改</button>
+            <button class="tiny-btn" data-id="${row.id}" data-type="strength" data-action="delete">刪除</button>
+          </div>
+        `;
         box.appendChild(item);
       });
       bindRecordActionButtons();
     }
 
     function bindRecordActionButtons() {
-      document.querySelectorAll('[data-action="edit"]').forEach(btn => btn.onclick = () => editRecord(btn.dataset.type, btn.dataset.id));
-      document.querySelectorAll('[data-action="delete"]').forEach(btn => btn.onclick = () => deleteRecord(btn.dataset.type, btn.dataset.id));
+      document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+        btn.onclick = () => editRecord(btn.dataset.type, btn.dataset.id);
+      });
+      document.querySelectorAll('[data-action="delete"]').forEach(btn => {
+        btn.onclick = () => deleteRecord(btn.dataset.type, btn.dataset.id);
+      });
     }
 
     async function editRecord(type, id) {
       const res = await postData({ action: 'getRecentRecords', recordType: type, limit: 30 });
       const row = (res.rows || []).find(r => String(r.id) === String(id));
       if (!row) return showMsg('找不到要修改的紀錄');
+
       if (type === 'body') {
         appState.editing.body = row;
-        $('bodyDate').value = formatDateInput(row.date);
+        $('bodyDate').value = String(row.date || '').replace(/\//g, '-');
         $('bodyTimeSlot').value = row.timeSlot;
         $('bodyWeight').value = row.weight ?? '';
         $('bodyFat').value = row.bodyFat ?? '';
@@ -546,9 +951,10 @@
         $('cancelBodyEditBtn').classList.remove('hidden');
         switchTab('body');
       }
+
       if (type === 'run') {
         appState.editing.run = row;
-        $('runDate').value = formatDateInput(row.date);
+        $('runDate').value = String(row.date || '').replace(/\//g, '-');
         $('runTimeSlot').value = row.timeSlot;
         $('runMinutes').value = row.minutes ?? '';
         $('runSpeed').value = row.speed ?? '';
@@ -558,9 +964,10 @@
         $('cancelRunEditBtn').classList.remove('hidden');
         switchTab('run');
       }
+
       if (type === 'strength') {
         appState.editing.strength = row;
-        $('strengthDate').value = formatDateInput(row.date);
+        $('strengthDate').value = String(row.date || '').replace(/\//g, '-');
         $('strengthTimeSlot').value = row.timeSlot;
         $('strengthExercise').value = row.exercise || '';
         $('strengthWeight').value = row.weight ?? '';
@@ -583,20 +990,15 @@
       }
     }
 
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      $('panel-' + tab).classList.add('active');
-    }
-
-    function formatDateInput(dateStr) {
-      return String(dateStr || '').replace(/\//g, '-');
-    }
-
     async function reloadAllAfterSave() {
       const data = await postData({ action: 'init' });
       applyInitialData(data);
-      await Promise.all([loadRecentRecords('body'), loadRecentRecords('run'), loadRecentRecords('strength'), loadStats(appState.currentRange)]);
+      await Promise.all([
+        loadRecentRecords('body'),
+        loadRecentRecords('run'),
+        loadRecentRecords('strength'),
+        loadStats(appState.currentRange)
+      ]);
     }
 
     async function loadStats(range) {
@@ -605,7 +1007,7 @@
         renderBodySummary(res.body || {});
         renderRunSummary(res.run || {});
         renderStrengthSummary(res.strength || {});
-        $('sheetLink').href = res.sheetUrl || '#';
+        $('sheetLink').href = res.sheetUrl || SHEET_URL;
       } catch (err) {
         showMsg(err.message);
       }
@@ -643,12 +1045,24 @@
         $('strengthSummary').innerHTML = '<div class="hint">目前沒有資料</div>';
         return;
       }
-      $('strengthSummary').innerHTML = rows.map(r => `<div class="record-item" style="margin-bottom:10px;"><div class="record-item-title">${r.exercise}</div><div class="record-item-meta">次數：${r.count} 次<br>平均重量：${r.avgWeight}<br>最大重量：${r.maxWeight}<br>平均次數：${r.avgReps}<br>平均組數：${r.avgSets}<br>總訓練量：${r.totalVolume}</div></div>`).join('');
+      $('strengthSummary').innerHTML = rows.map(r => `
+        <div class="record-item" style="margin-bottom:10px;">
+          <div class="record-item-title">${r.exercise}</div>
+          <div class="record-item-meta">
+            次數：${r.count} 次<br>
+            平均重量：${r.avgWeight}<br>
+            最大重量：${r.maxWeight}<br>
+            平均次數：${r.avgReps}<br>
+            平均組數：${r.avgSets}<br>
+            總訓練量：${r.totalVolume}
+          </div>
+        </div>
+      `).join('');
     }
 
     initApp().catch(err => {
       console.error(err);
-      showMsg('初始化失敗，請先確認 GAS_URL 是否正確');
+      showMsg('初始化失敗，請先確認 GAS 與部署狀態');
     });
   </script>
 </body>
